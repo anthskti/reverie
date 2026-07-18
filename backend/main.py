@@ -37,10 +37,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Comment Out when in Prod
 
-app.include_router(analytics_router)
-app.include_router(inventory_router)
-app.include_router(pipeline_router)
-app.include_router(projects_router)
+app.include_router(analytics_router, prefix="/api")
+app.include_router(inventory_router, prefix="/api")
+app.include_router(pipeline_router, prefix="/api")
+app.include_router(projects_router, prefix="/api")
 
 
 @app.get("/")
