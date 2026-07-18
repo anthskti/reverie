@@ -9,8 +9,10 @@ from fastapi.staticfiles import StaticFiles
 
 from controllers.analytics import router as analytics_router
 from controllers.inventory import router as inventory_router
+from controllers.marketplace import router as marketplace_router
 from controllers.pipeline import router as pipeline_router
 from controllers.projects import router as projects_router
+from controllers.webhooks import router as webhooks_router
 from database import dispose_engines, init_models, is_configured
 
 
@@ -39,8 +41,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(analytics_router, prefix="/api")
 app.include_router(inventory_router, prefix="/api")
+app.include_router(marketplace_router, prefix="/api")
 app.include_router(pipeline_router, prefix="/api")
 app.include_router(projects_router, prefix="/api")
+app.include_router(webhooks_router, prefix="/api")
 
 
 @app.get("/")

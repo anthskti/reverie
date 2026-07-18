@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from core.auth import verify_token
-from repositories.inventory_repository import InventoryRepository
 from schemas.inventory import ItemResponse, UserStatsResponse
+from services.inventory import InventoryService
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
@@ -11,8 +11,8 @@ router = APIRouter(prefix="/inventory", tags=["inventory"])
 async def get_my_stats(token_payload: dict = Depends(verify_token)):
     """Fetch or lazily create a user's environmental stats."""
     user_id = token_payload.get("sub")
-    repository = InventoryRepository()
-    stats = await repository.get_user_stats(user_id)
+    service = InventoryService()
+    stats = await service.get_user_stats(user_id)
     return stats
 
 
@@ -20,8 +20,8 @@ async def get_my_stats(token_payload: dict = Depends(verify_token)):
 async def get_my_items(token_payload: dict = Depends(verify_token)):
     """Fetch all physical items belonging to the authenticated user."""
     user_id = token_payload.get("sub")
-    repository = InventoryRepository()
-    items = await repository.get_user_items(user_id)
+    service = InventoryService()
+    items = await service.get_user_items(user_id)
     return items
 
 
@@ -29,10 +29,12 @@ async def get_my_items(token_payload: dict = Depends(verify_token)):
 async def get_item(item_id: str, token_payload: dict = Depends(verify_token)):
     """Fetch a specific item ensuring the authenticated user owns it."""
     user_id = token_payload.get("sub")
-    repository = InventoryRepository()
-    item = await repository.get_item(item_id, user_id)
-    
-    if not item:
-        raise HTTPException(status_code=404, detail="Item not found or unauthorized")
-        
-    return item
+    service = InventoryService()
+    try:
+        item = await service.get_item_or_raise(item_id, user_id)
+        return item
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
+

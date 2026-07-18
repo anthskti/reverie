@@ -24,6 +24,10 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     Returns the decoded token payload on success.
     """
     if os.getenv("TESTING") == "True":
+        # Support mock_token_{custom_id} to simulate multiple users
+        token_str = credentials.credentials
+        if token_str.startswith("mock_token_"):
+            return {"sub": token_str.split("mock_token_")[1]}
         return {"sub": "qa_test_user_123"}
 
     token = credentials.credentials

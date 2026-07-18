@@ -5,7 +5,7 @@ import uuid
 import httpx
 from PIL import Image
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "http://127.0.0.1:8000/api/"
 
 def create_dummy_image(color="red") -> bytes:
     """Load the user's specific mockimage.jpg to simulate garment upload."""
@@ -30,9 +30,9 @@ def run_tests():
     project_id = None
 
     try:
-        # 0. Health check
+        # 0. Health check (relative to origin via ../health)
         print("\n[Step 0] Verifying Health Check...")
-        res = client.get("/health")
+        res = client.get("../health")
         assert res.status_code == 200, f"Health check failed: {res.text}"
         data = res.json()
         print("Health status:", data)
@@ -52,7 +52,7 @@ def run_tests():
             "tools_available": '["scissors", "sewing machine", "fabric paint"]',
             "generate_mockups": "true"
         }
-        res = client.post("/upcycle/ideate", data=data, files=files)
+        res = client.post("upcycle/ideate", data=data, files=files)
         assert res.status_code == 200, f"Ideation failed: {res.text}"
         ideation_data = res.json()
         print("Ideation response status code: 200")
@@ -77,7 +77,7 @@ def run_tests():
         print("  - Case A: Invalid JSON in tools_available")
         bad_data = data.copy()
         bad_data["tools_available"] = "[invalid json]"
-        res = client.post("/upcycle/ideate", data=bad_data, files=files)
+        res = client.post("upcycle/ideate", data=bad_data, files=files)
         assert res.status_code == 400, f"Expected 400, got {res.status_code}: {res.text}"
         print(f"    Passed: 400 Bad Request returned: {res.json()['detail']}")
 
@@ -86,7 +86,7 @@ def run_tests():
         empty_files = {
             "image": ("garment.jpg", b"", "image/jpeg")
         }
-        res = client.post("/upcycle/ideate", data=data, files=empty_files)
+        res = client.post("upcycle/ideate", data=data, files=empty_files)
         assert res.status_code == 400, f"Expected 400, got {res.status_code}: {res.text}"
         print(f"    Passed: 400 Bad Request returned: {res.json()['detail']}")
 
@@ -98,7 +98,7 @@ def run_tests():
             "fabric_type": "denim",
             "weight_kg": 0.75
         }
-        res = client.post("/upcycle/execute", json=exec_payload)
+        res = client.post("upcycle/execute", json=exec_payload)
         assert res.status_code == 200, f"Execution failed: {res.text}"
         exec_data = res.json()
         print("Execution response status code: 200")
@@ -125,7 +125,7 @@ def run_tests():
             "fabric_type": "denim",
             "weight_kg": 0.75
         }
-        res = client.post("/upcycle/execute", json=bad_payload)
+        res = client.post("upcycle/execute", json=bad_payload)
         assert res.status_code == 422, f"Expected 422, got {res.status_code}"
         print("    Passed: 422 Unprocessable Entity returned.")
 
@@ -135,7 +135,7 @@ def run_tests():
         files_verification = {
             "image": ("completed.jpg", completed_image, "image/jpeg")
         }
-        res = client.post(f"/upcycle/{item_id}/verify", files=files_verification)
+        res = client.post(f"upcycle/{item_id}/verify", files=files_verification)
         assert res.status_code == 200, f"Verification failed: {res.text}"
         verification_data = res.json()
         print("Verification response status code: 200")
@@ -152,7 +152,7 @@ def run_tests():
         # 6a. Non-existent item_id
         print("  - Case A: Non-existent item_id")
         fake_item_id = str(uuid.uuid4())
-        res = client.post(f"/upcycle/{fake_item_id}/verify", files=files_verification)
+        res = client.post(f"upcycle/{fake_item_id}/verify", files=files_verification)
         assert res.status_code == 404, f"Expected 404, got {res.status_code}: {res.text}"
         print(f"    Passed: 404 Not Found returned: {res.json()['detail']}")
 
@@ -161,17 +161,17 @@ def run_tests():
         # Run ideation to get a new item_id
         dummy_image_c = create_dummy_image("yellow")
         files_c = {"image": ("garment.jpg", dummy_image_c, "image/jpeg")}
-        res = client.post("/upcycle/ideate", data=data, files=files_c)
+        res = client.post("upcycle/ideate", data=data, files=files_c)
         assert res.status_code == 200
         new_item_id = res.json()["item_id"]
         # Try to verify right away
-        res = client.post(f"/upcycle/{new_item_id}/verify", files=files_verification)
+        res = client.post(f"upcycle/{new_item_id}/verify", files=files_verification)
         assert res.status_code == 404, f"Expected 404, got {res.status_code}: {res.text}"
         print(f"    Passed: 404 Not Found returned: {res.json()['detail']}")
 
         # 7. Project Listing for User
         print("\n[Step 7] Checking Project Listing for user...")
-        res = client.get("/projects/")
+        res = client.get("projects/")
         assert res.status_code == 200, f"Listing projects failed: {res.text}"
         list_data = res.json()
         print(f"Projects returned: {len(list_data['projects'])}")
@@ -191,17 +191,17 @@ def run_tests():
         print("\n[Step 8] Checking Global Stats & Inventory Profile...")
         
         # 8a. Global Stats
-        res = client.get("/stats/global")
+        res = client.get("stats/global")
         assert res.status_code == 200, f"Global stats failed: {res.text}"
         print("    Passed: Global Stats fetched successfully")
         
         # 8b. User Stats (Lazy Creation Sync test)
-        res = client.get("/inventory/me/stats")
+        res = client.get("inventory/me/stats")
         assert res.status_code == 200, f"User stats failed: {res.text}"
         print("    Passed: User Stats fetched successfully (lazy sync triggered)")
         
         # 8c. User Items
-        res = client.get("/inventory/me")
+        res = client.get("inventory/me")
         assert res.status_code == 200, f"User items failed: {res.text}"
         items_list = res.json()
         print(f"    Passed: User Items fetched successfully: found {len(items_list)} items")
