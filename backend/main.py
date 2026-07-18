@@ -5,6 +5,8 @@ from fastapi import FastAPI
 
 from fastapi.staticfiles import StaticFiles
 
+from controllers.analytics import router as analytics_router
+from controllers.inventory import router as inventory_router
 from controllers.pipeline import router as pipeline_router
 from controllers.projects import router as projects_router
 from database import dispose_engines, init_models, is_configured
@@ -35,6 +37,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Comment Out when in Prod
 
+app.include_router(analytics_router)
+app.include_router(inventory_router)
 app.include_router(pipeline_router)
 app.include_router(projects_router)
 

@@ -4,7 +4,6 @@ from schemas.designer import UpcycleOption
 
 
 class ExecutionRequest(BaseModel):
-    user_id: str
     item_id: str
     selected_concept: UpcycleOption
     fabric_type: str = Field(description="Fabric type, e.g. cotton, polyester, denim")
