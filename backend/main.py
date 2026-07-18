@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 
 from fastapi.staticfiles import StaticFiles
@@ -10,8 +12,6 @@ from controllers.inventory import router as inventory_router
 from controllers.pipeline import router as pipeline_router
 from controllers.projects import router as projects_router
 from database import dispose_engines, init_models, is_configured
-
-load_dotenv()
 
 
 @asynccontextmanager

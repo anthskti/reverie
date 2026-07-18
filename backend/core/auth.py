@@ -5,16 +5,15 @@ import httpx
 from fastapi import HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
-AUTH0_AUDIENCE = os.getenv("AUTH0_AUDIENCE")
 ALGORITHMS = ["RS256"]
 
 security = HTTPBearer()
 
 def get_jwks():
-    if not AUTH0_DOMAIN:
+    auth0_domain = os.getenv("AUTH0_DOMAIN")
+    if not auth0_domain:
         raise ValueError("AUTH0_DOMAIN is not set in environment variables.")
-    jwks_url = f"https://{AUTH0_DOMAIN}/.well-known/jwks.json"
+    jwks_url = f"https://{auth0_domain}/.well-known/jwks.json"
     response = httpx.get(jwks_url)
     response.raise_for_status()
     return response.json()
@@ -54,8 +53,8 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
             token,
             jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(rsa_key)),
             algorithms=ALGORITHMS,
-            audience=AUTH0_AUDIENCE,
-            issuer=f"https://{AUTH0_DOMAIN}/"
+            audience=os.getenv("AUTH0_AUDIENCE"),
+            issuer=f"https://{os.getenv('AUTH0_DOMAIN')}/"
         )
         return payload
 
