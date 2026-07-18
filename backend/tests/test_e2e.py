@@ -24,8 +24,7 @@ def run_tests():
     print("STARTING END-TO-END QA TESTING FOR REVERIE BACKEND")
     print("=" * 60)
 
-    client = httpx.Client(base_url=BASE_URL, timeout=60.0)
-    user_id = f"qa_test_user_{uuid.uuid4().hex[:8]}"
+    client = httpx.Client(base_url=BASE_URL, timeout=60.0, headers={"Authorization": "Bearer mock_token"})
     item_id = None
     selected_concept = None
     project_id = None
@@ -46,7 +45,6 @@ def run_tests():
             "image": ("garment.jpg", dummy_image, "image/jpeg")
         }
         data = {
-            "user_id": user_id,
             "style": "vintage 90s streetwear",
             "difficulty": "medium",
             "fabric_type": "denim",
@@ -95,7 +93,6 @@ def run_tests():
         # 3. Phase 2: Execution (Happy Path)
         print("\n[Step 3] Phase 2: Execution (Happy Path)...")
         exec_payload = {
-            "user_id": user_id,
             "item_id": item_id,
             "selected_concept": selected_concept,
             "fabric_type": "denim",
@@ -124,7 +121,6 @@ def run_tests():
         # 4a. Missing fields (validation error)
         print("  - Case A: Missing selected_concept")
         bad_payload = {
-            "user_id": user_id,
             "item_id": item_id,
             "fabric_type": "denim",
             "weight_kg": 0.75
@@ -175,7 +171,7 @@ def run_tests():
 
         # 7. Project Listing for User
         print("\n[Step 7] Checking Project Listing for user...")
-        res = client.get(f"/projects/{user_id}")
+        res = client.get("/projects/")
         assert res.status_code == 200, f"Listing projects failed: {res.text}"
         list_data = res.json()
         print(f"Projects returned: {len(list_data['projects'])}")
@@ -190,6 +186,25 @@ def run_tests():
                 break
         assert found_project, "The created project was not found in the user's project list"
         print("    Passed: User project list verified successfully.")
+
+        # 8. Stats & Inventory Listing
+        print("\n[Step 8] Checking Global Stats & Inventory Profile...")
+        
+        # 8a. Global Stats
+        res = client.get("/stats/global")
+        assert res.status_code == 200, f"Global stats failed: {res.text}"
+        print("    Passed: Global Stats fetched successfully")
+        
+        # 8b. User Stats (Lazy Creation Sync test)
+        res = client.get("/inventory/me/stats")
+        assert res.status_code == 200, f"User stats failed: {res.text}"
+        print("    Passed: User Stats fetched successfully (lazy sync triggered)")
+        
+        # 8c. User Items
+        res = client.get("/inventory/me")
+        assert res.status_code == 200, f"User items failed: {res.text}"
+        items_list = res.json()
+        print(f"    Passed: User Items fetched successfully: found {len(items_list)} items")
 
         print("\n" + "=" * 60)
         print("ALL END-TO-END QA TESTS COMPLETED SUCCESSFULLY!")

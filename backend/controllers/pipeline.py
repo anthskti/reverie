@@ -1,7 +1,8 @@
 import json
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
+from core.auth import verify_token
 from agents.workflow import get_workflow
 from schemas.execution import ExecutionRequest, ExecutionResponse
 from schemas.ideation import IdeationResponse
@@ -13,15 +14,16 @@ router = APIRouter(prefix="/upcycle", tags=["upcycle"])
 @router.post("/ideate", response_model=IdeationResponse)
 async def ideate(
     image: UploadFile = File(...),
-    user_id: str = Form(...),
     style: str = Form(...),
     difficulty: str = Form(...),
     fabric_type: str = Form(default=None),
     weight_kg: float = Form(default=None),
     tools_available: str = Form(default='["scissors", "sewing machine"]'),
     generate_mockups: bool = Form(default=False),
+    token_payload: dict = Depends(verify_token),
 ):
     """Phase 1: upload a garment image and generate 3 upcycling concepts."""
+    user_id = token_payload.get("sub")
     # Parse robustly: support JSON array or fallback to comma-separated values
     tools_available_clean = tools_available.strip()
     if tools_available_clean.startswith("[") and tools_available_clean.endswith("]"):
@@ -63,13 +65,17 @@ async def ideate(
 
 
 @router.post("/execute", response_model=ExecutionResponse)
-async def execute(body: ExecutionRequest):
+async def execute(
+    body: ExecutionRequest,
+    token_payload: dict = Depends(verify_token),
+):
     """Phase 2: generate sewing guide and environmental impact for a selected concept."""
     workflow = get_workflow()
+    user_id = token_payload.get("sub")
 
     try:
         result = await workflow.run_phase_2_execution(
-            user_id=body.user_id,
+            user_id=user_id,
             item_id=body.item_id,
             selected_concept=body.selected_concept,
             fabric_type=body.fabric_type,
@@ -87,6 +93,7 @@ async def execute(body: ExecutionRequest):
 async def verify(
     item_id: str,
     image: UploadFile = File(...),
+    token_payload: dict = Depends(verify_token),
 ):
     """Phase 3: verify a completed garment against the original design and instructions."""
     image_bytes = await image.read()
