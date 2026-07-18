@@ -31,6 +31,29 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
         return {"sub": "qa_test_user_123"}
 
     token = credentials.credentials
+    # Check if the token is a JWT (3 parts separated by dots)
+    if len(token.split(".")) != 3:
+        # It's an opaque token. Verify via Auth0 /userinfo endpoint.
+        auth0_domain = os.getenv("AUTH0_DOMAIN")
+        userinfo_url = f"https://{auth0_domain}/userinfo"
+        try:
+            resp = httpx.get(
+                userinfo_url,
+                headers={"Authorization": f"Bearer {token}"}
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid opaque token or unable to fetch user info",
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Error validating opaque token: {str(e)}",
+            )
+
     try:
         unverified_header = jwt.get_unverified_header(token)
         jwks = get_jwks()
@@ -57,7 +80,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
             token,
             jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(rsa_key)),
             algorithms=ALGORITHMS,
-            audience=os.getenv("AUTH0_AUDIENCE"),
+            audience=os.getenv("AUTH0_AUDIENCE") if os.getenv("AUTH0_AUDIENCE") else None,
             issuer=f"https://{os.getenv('AUTH0_DOMAIN')}/"
         )
         return payload

@@ -52,6 +52,28 @@ def generate_mockup(client: genai.Client, original_image_desc: str, concept: str
     raise ValueError("No image data returned from the model.")
 
 
+def _collect_full_text(response) -> str:
+    """Reconstruct the full model output across automatic-function-calling turns.
+
+    When a tool is called mid-generation, ``response.text`` only contains the
+    text from the *final* model turn.  Earlier text (before the tool call) lives
+    in ``response.automatic_function_calling_history``.  This helper gathers
+    text from every model turn so nothing is lost.
+    """
+    history = getattr(response, "automatic_function_calling_history", None) or []
+    if history:
+        parts: list[str] = []
+        for message in history:
+            if getattr(message, "role", None) == "model":
+                for part in getattr(message, "parts", []):
+                    text = getattr(part, "text", None)
+                    if text:
+                        parts.append(text)
+        if parts:
+            return "\n".join(parts)
+    return response.text or ""
+
+
 def generate_sewing_guide(client: genai.Client, concept: dict) -> str:
     response = client.models.generate_content(
         model="gemini-2.5-flash-lite",
@@ -61,7 +83,7 @@ def generate_sewing_guide(client: genai.Client, concept: dict) -> str:
             temperature=0.2,
         ),
     )
-    return response.text
+    return _collect_full_text(response)
 
 
 def process_environmental_impact(
@@ -77,7 +99,7 @@ def process_environmental_impact(
             temperature=0.1,
         ),
     )
-    return response.text
+    return _collect_full_text(response)
 
 
 def verify_garment(

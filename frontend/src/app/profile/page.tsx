@@ -24,7 +24,7 @@ import { useAuthModal } from "@/components/providers/auth-modal-provider";
 
 export default function ProfilePage() {
   const { user } = useAuth0();
-  const { getToken, isAuthenticated } = useApiClient();
+  const { getToken, isAuthenticated, isLoading: authLoading } = useApiClient();
   const { openAuthModal } = useAuthModal();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [items, setItems] = useState<Item[]>([]);
@@ -32,6 +32,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!isAuthenticated) {
       openAuthModal();
       return;
@@ -57,7 +58,15 @@ export default function ProfilePage() {
     }
 
     load();
-  }, [getToken, isAuthenticated, openAuthModal]);
+  }, [getToken, isAuthenticated, openAuthModal, authLoading]);
+
+  if (authLoading) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
+        <Skeleton className="h-40 w-full" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (

@@ -35,7 +35,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         audience: audience || undefined,
       }}
       cacheLocation="localstorage"
-      useRefreshTokens
     >
       {children}
     </Auth0Provider>

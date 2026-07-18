@@ -20,22 +20,22 @@ const AuthModalContext = createContext<AuthModalContextType | undefined>(undefin
 
 export function AuthModalProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
-  const { loginWithPopup } = useAuth0();
+  const { loginWithRedirect } = useAuth0();
 
   const openAuthModal = () => setIsOpen(true);
   const closeAuthModal = () => setIsOpen(false);
 
-  const handleLogin = async (screen_hint?: "signup") => {
-    try {
-      await loginWithPopup({
-        authorizationParams: {
-          screen_hint,
-        },
-      });
-      closeAuthModal();
-    } catch (error) {
-      console.error("Popup login failed", error);
-    }
+  const handleLogin = (screen_hint?: "signup") => {
+    closeAuthModal();
+    loginWithRedirect({
+      authorizationParams: {
+        redirect_uri: window.location.origin,
+        screen_hint,
+      },
+      appState: {
+        returnTo: "/profile",
+      },
+    });
   };
 
   return (

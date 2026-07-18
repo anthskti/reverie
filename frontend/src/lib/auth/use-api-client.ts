@@ -7,7 +7,7 @@ import { apiFetch, type FetchOptions } from "@/lib/api/client";
 import { useAuthModal } from "@/components/providers/auth-modal-provider";
 
 export function useApiClient() {
-  const { getAccessTokenSilently, isAuthenticated } = useAuth0();
+  const { getAccessTokenSilently, isAuthenticated, isLoading } = useAuth0();
   const { openAuthModal } = useAuthModal();
 
   const getToken = useCallback(async (): Promise<string> => {
@@ -33,5 +33,5 @@ export function useApiClient() {
     [getToken, openAuthModal],
   );
 
-  return { authFetch, getToken, isAuthenticated };
+  return { authFetch, getToken, isAuthenticated, isLoading };
 }
