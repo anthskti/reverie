@@ -62,7 +62,7 @@ export default function ProfilePage() {
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center space-y-4 px-4 text-center">
-        <h1 className="text-2xl font-bold">Please log in</h1>
+        <h1 className="text-2xl font-black text-primary">Please log in</h1>
         <p className="text-muted-foreground">You need to log in to view your profile.</p>
         <Button onClick={() => openAuthModal()}>Log In</Button>
       </div>
@@ -128,7 +128,7 @@ export default function ProfilePage() {
 
         <TabsContent value="stats" className="mt-6 space-y-8">
           <section>
-            <h2 className="mb-4 text-xl font-semibold">Your impact</h2>
+            <h2 className="mb-4 text-xl font-bold text-primary">Your impact</h2>
             <ImpactStats
               water={stats.water_saved_l}
               co2={stats.co2_offset_kg}
@@ -137,22 +137,22 @@ export default function ProfilePage() {
           </section>
 
           <section>
-            <h2 className="mb-4 text-xl font-semibold">Achievements</h2>
+            <h2 className="mb-4 text-xl font-bold text-primary">Achievements</h2>
             <BadgeGrid badges={gamification.badges} />
           </section>
         </TabsContent>
 
         <TabsContent value="inventory" className="mt-6">
-          <h2 className="mb-4 text-xl font-semibold">Wardrobe inventory</h2>
+          <h2 className="mb-4 text-xl font-bold text-primary">Wardrobe inventory</h2>
           <InventoryGrid items={items} />
         </TabsContent>
 
         <TabsContent value="projects" className="mt-6">
-          <h2 className="mb-4 text-xl font-semibold">Your projects</h2>
+          <h2 className="mb-4 text-xl font-bold text-primary">Your projects</h2>
           {projects.length === 0 ? (
-            <div className="mt-4 rounded-xl border border-dashed p-12 text-center">
+            <div className="mt-4 rounded-2xl border border-dashed border-border p-12 text-center">
               <p className="text-muted-foreground">No projects yet.</p>
-              <Link href="/upcycle" className="mt-4 inline-block text-primary hover:underline">
+              <Link href="/upcycle" className="mt-4 inline-block font-semibold text-primary hover:underline">
                 Start upcycling →
               </Link>
             </div>
@@ -160,7 +160,7 @@ export default function ProfilePage() {
             <div className="mt-4 grid gap-4">
               {projects.map((project) => (
                 <Link key={project.id} href={`/projects/${project.id}`}>
-                  <Card className="transition-shadow hover:shadow-md">
+                  <Card className="border-border transition-all hover:border-primary/25 hover:shadow-lg">
                     <CardHeader className="flex flex-row items-start justify-between">
                       <div>
                         <CardTitle className="text-lg">

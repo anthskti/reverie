@@ -61,7 +61,7 @@ export default function ProjectDetailPage() {
         <Button asChild variant="ghost" size="sm">
           <Link href="/projects">← Projects</Link>
         </Button>
-        <h1 className="mt-2 text-3xl font-bold">
+        <h1 className="mt-2 text-3xl font-black text-primary">
           {project.selected_concept?.title ?? "Project"}
         </h1>
         <p className="text-muted-foreground capitalize">

@@ -104,7 +104,7 @@ export default function SellPage() {
       <Button asChild variant="ghost" size="sm">
         <Link href="/marketplace">← Marketplace</Link>
       </Button>
-      <h1 className="mt-4 text-3xl font-bold">Sell on Reverie</h1>
+      <h1 className="mt-4 text-3xl font-black text-primary">Sell on Reverie</h1>
       <p className="mt-2 text-muted-foreground">
         List upcycled clothing, materials, or tools for USDC.
       </p>
