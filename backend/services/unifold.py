@@ -1,108 +1,70 @@
-"""Thin async wrapper around the Unifold Payout & Commerce API.
+"""Local Unifold sandbox — no live payments, no external API calls.
 
-When UNIFOLD_API_URL is not set the client operates in offline/no-op mode so
-the full pipeline can run locally without a live Unifold account.
+Mirrors the Connect deposit shape from https://demo.unifold.io/demo/customize
+so the marketplace buy flow can be exercised end-to-end locally.
 """
 
 from __future__ import annotations
 
-import os
+import uuid
+from typing import Any
 
-import httpx
-
-_UNIFOLD_API_URL = os.getenv("UNIFOLD_API_URL", "")
-_UNIFOLD_API_KEY = os.getenv("UNIFOLD_API_KEY", "")
-
-# How long (seconds) to wait for Unifold API responses before timing out.
-_TIMEOUT = 15.0
-
-
-def _is_configured() -> bool:
-    return bool(_UNIFOLD_API_URL)
+# Demo destination matching Unifold Connect sandbox examples (Base USDC).
+_SANDBOX_RECIPIENT = "0x606C49ca2Fa4982F07016265040F777eD3DA3160"
+_SANDBOX_CHAIN_TYPE = "ethereum"
+_SANDBOX_CHAIN_ID = "8453"
+_SANDBOX_TOKEN_ADDRESS = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
+_SANDBOX_TOKEN_SYMBOL = "USDC"
 
 
-def _headers() -> dict[str, str]:
-    return {
-        "Authorization": f"Bearer {_UNIFOLD_API_KEY}",
-        "Content-Type": "application/json",
-    }
-
-
-async def create_checkout(
+def create_deposit_session(
     listing_id: str,
     buyer_id: str,
     seller_id: str,
     amount_usdc: float,
-) -> str:
-    """Create a Unifold Sandbox checkout session.
+) -> dict[str, Any]:
+    """Build a local sandbox deposit session (Connect-compatible fields).
 
-    Returns the checkout URL that the buyer should be redirected to.
-    In offline mode, returns a stub URL so the flow can be exercised locally.
-
-    Unifold will POST back to ``/api/webhooks/unifold`` with
-    ``event_type == 'deposit.settled'`` once the buyer pays, passing
-    ``listing_id`` and ``buyer_id`` inside the ``metadata`` block.
+    The frontend opens a sandbox checkout UI with these params. Completing
+    payment calls ``POST /api/marketplace/confirm-payment/{listing_id}``,
+    which simulates Unifold's ``deposit.settled`` webhook.
     """
-    if not _is_configured():
-        stub_url = (
-            f"https://sandbox.unifold.io/checkout/stub"
-            f"?listing_id={listing_id}&amount={amount_usdc}"
-        )
-        return stub_url
-
-    url = f"{_UNIFOLD_API_URL.rstrip('/')}/checkout"
-    payload = {
+    return {
+        "mode": "sandbox",
+        "session_id": f"uf_sandbox_{uuid.uuid4().hex[:16]}",
+        "external_user_id": buyer_id,
+        "recipient_address": _SANDBOX_RECIPIENT,
+        "destination_chain_type": _SANDBOX_CHAIN_TYPE,
+        "destination_chain_id": _SANDBOX_CHAIN_ID,
+        "destination_token_address": _SANDBOX_TOKEN_ADDRESS,
+        "destination_token_symbol": _SANDBOX_TOKEN_SYMBOL,
         "amount_usdc": amount_usdc,
+        "listing_id": listing_id,
         "seller_id": seller_id,
         "metadata": {
             "listing_id": listing_id,
             "buyer_id": buyer_id,
         },
-        # Webhook callback — Unifold will POST deposit.settled here
-        "webhook_url": os.getenv("APP_BASE_URL", "") + "/api/webhooks/unifold",
     }
 
-    async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-        response = await client.post(url, json=payload, headers=_headers())
-        response.raise_for_status()
-        data = response.json()
-        return data["checkout_url"]
+
+def sandbox_deposit_transaction_id(listing_id: str) -> str:
+    """Deterministic-looking fake tx hash for sandbox deposit settlement."""
+    return f"0xsandbox_deposit_{listing_id.replace('-', '')[:24]}"
 
 
-async def trigger_payout(
+def trigger_payout(
     listing_id: str,
     seller_id: str,
     amount_usdc: float,
-) -> dict:
-    """Instruct Unifold to disburse escrowed funds to the seller.
-
-    Returns the raw Unifold response body as a dict, or a stub dict when
-    the service is unconfigured (offline mode).
-
-    Unifold will POST back to ``/api/webhooks/unifold`` with
-    ``event_type == 'payout.settled'`` once the transfer completes.
-    """
-    if not _is_configured():
-        return {
-            "status": "offline_noop",
-            "listing_id": listing_id,
-            "seller_id": seller_id,
-            "amount_usdc": amount_usdc,
-            "message": "Unifold API not configured — payout skipped in offline mode.",
-        }
-
-    url = f"{_UNIFOLD_API_URL.rstrip('/')}/payouts"
-    payload = {
+) -> dict[str, Any]:
+    """Sandbox payout — no external transfer; records a fake settlement id."""
+    tx_id = f"0xsandbox_payout_{listing_id.replace('-', '')[:24]}"
+    return {
+        "status": "sandbox_settled",
         "listing_id": listing_id,
         "seller_id": seller_id,
         "amount_usdc": amount_usdc,
+        "transaction_id": tx_id,
+        "message": "Sandbox payout settled locally (no real transfer).",
     }
-
-    headers = _headers()
-    # Use the listing_id as the idempotency key so this payout can never be executed twice
-    headers["Idempotency-Key"] = listing_id
-
-    async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-        response = await client.post(url, json=payload, headers=headers)
-        response.raise_for_status()
-        return response.json()

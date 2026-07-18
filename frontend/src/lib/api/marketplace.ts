@@ -1,6 +1,7 @@
 import { apiFetch } from "./client";
 import type {
   CheckoutResponse,
+  ConfirmPaymentResponse,
   ListItemRequest,
   Listing,
 } from "@/lib/types";
@@ -56,6 +57,16 @@ export function checkout(
 ): Promise<CheckoutResponse> {
   return apiFetch<CheckoutResponse>(
     `/api/marketplace/checkout/${listingId}`,
+    { method: "POST", token },
+  );
+}
+
+export function confirmPayment(
+  token: string,
+  listingId: string,
+): Promise<ConfirmPaymentResponse> {
+  return apiFetch<ConfirmPaymentResponse>(
+    `/api/marketplace/confirm-payment/${listingId}`,
     { method: "POST", token },
   );
 }

@@ -110,8 +110,8 @@ class MarketplaceService:
             )
         return listing
 
-    async def checkout(self, listing_id: str, buyer_id: str) -> str:
-        """Generate a checkout session and advance listing status."""
+    async def checkout(self, listing_id: str, buyer_id: str) -> dict[str, Any]:
+        """Create a local Unifold sandbox deposit session and lock the listing."""
         listing = await self.marketplace_repo.get_listing(listing_id)
         if listing is None:
             raise HTTPException(
@@ -134,28 +134,59 @@ class MarketplaceService:
                 detail="You cannot purchase your own listing.",
             )
 
-        try:
-            checkout_url = await unifold_service.create_checkout(
-                listing_id=listing_id,
-                buyer_id=buyer_id,
-                seller_id=listing.seller_id,
-                amount_usdc=float(listing.price_usdc),
-            )
-        except Exception as exc:
-            logger.error(
-                "Unifold checkout creation failed for listing %s: %s",
-                listing_id,
-                exc,
-            )
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Failed to create checkout session: {exc}",
-            ) from exc
+        deposit = unifold_service.create_deposit_session(
+            listing_id=listing_id,
+            buyer_id=buyer_id,
+            seller_id=listing.seller_id,
+            amount_usdc=float(listing.price_usdc),
+        )
 
         await self.marketplace_repo.record_checkout(
             listing_id=listing_id, buyer_id=buyer_id
         )
-        return checkout_url
+        return deposit
+
+    async def confirm_sandbox_payment(
+        self, listing_id: str, buyer_id: str
+    ) -> dict[str, str]:
+        """Simulate Unifold deposit.settled for local sandbox checkout."""
+        listing = await self.marketplace_repo.get_listing(listing_id)
+        if listing is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Listing not found.",
+            )
+
+        if listing.status != "pending_payment":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    f"Listing is in status '{listing.status}'. "
+                    "Sandbox confirm requires status 'pending_payment'."
+                ),
+            )
+
+        if listing.buyer_id != buyer_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only the buyer who initiated checkout may confirm payment.",
+            )
+
+        tx_id = unifold_service.sandbox_deposit_transaction_id(listing_id)
+        await self.marketplace_repo.set_listing_status(
+            listing_id, "locked_in_escrow"
+        )
+        logger.info(
+            "sandbox deposit.settled: listing %s → locked_in_escrow (tx: %s)",
+            listing_id,
+            tx_id,
+        )
+        return {
+            "listing_id": listing_id,
+            "status": "locked_in_escrow",
+            "transaction_id": tx_id,
+            "message": "Sandbox payment settled. Funds are in escrow.",
+        }
 
     async def settle_purchase(self, listing_id: str, buyer_id: str) -> None:
         """Mark item received and release escrowed payout to the seller."""
@@ -182,15 +213,15 @@ class MarketplaceService:
                 detail="Only the buyer who initiated checkout may settle this listing.",
             )
 
-        try:
-            await unifold_service.trigger_payout(
-                listing_id=listing_id,
-                seller_id=listing.seller_id,
-                amount_usdc=float(listing.price_usdc),
-            )
-        except Exception as exc:
-            logger.error(
-                "Unifold payout failed for listing %s: %s", listing_id, exc
+        payout = unifold_service.trigger_payout(
+            listing_id=listing_id,
+            seller_id=listing.seller_id,
+            amount_usdc=float(listing.price_usdc),
+        )
+        tx_id = payout.get("transaction_id")
+        if tx_id:
+            await self.marketplace_repo.record_payout(
+                listing_id=listing_id, transaction_id=tx_id
             )
 
         await self.marketplace_repo.set_listing_status(listing_id, "sold")

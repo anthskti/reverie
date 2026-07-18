@@ -3,16 +3,23 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useAuth0 } from "@auth0/auth0-react";
-import { getListing, checkout, settle, updateListing } from "@/lib/api/marketplace";
+import {
+  getListing,
+  checkout,
+  confirmPayment,
+  settle,
+  updateListing,
+} from "@/lib/api/marketplace";
 import { useApiClient } from "@/lib/auth/use-api-client";
-import type { ApiError, Listing } from "@/lib/types";
+import type { ApiError, DepositSession, Listing } from "@/lib/types";
 import { formatUsdc, resolveMediaUrl, truncateId } from "@/lib/utils";
 import {
   getListingStatusMessage,
   ListingStatusTimeline,
 } from "@/components/marketplace/listing-status";
+import { UnifoldSandboxCheckout } from "@/components/marketplace/unifold-sandbox-checkout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,13 +40,15 @@ function decodeSub(token: string): string | null {
 
 export default function ListingDetailPage() {
   const params = useParams<{ listingId: string }>();
-  const searchParams = useSearchParams();
   const { isAuthenticated } = useAuth0();
   const { getToken } = useApiClient();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [userSub, setUserSub] = useState<string | null>(null);
+  const [sandboxOpen, setSandboxOpen] = useState(false);
+  const [deposit, setDeposit] = useState<DepositSession | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   const loadListing = async () => {
     try {
@@ -61,29 +70,36 @@ export default function ListingDetailPage() {
     getToken().then((token) => setUserSub(decodeSub(token)));
   }, [getToken, isAuthenticated]);
 
-  useEffect(() => {
-    if (searchParams.get("purchased") === "1" && listing) {
-      sessionStorage.setItem(
-        `reverie_listing_${listing.listing_id}`,
-        listing.listing_id,
-      );
-    }
-  }, [searchParams, listing]);
-
   const handleCheckout = async () => {
     if (!listing) return;
     setActionLoading(true);
     try {
       const token = await getToken();
       const result = await checkout(token, listing.listing_id);
-      sessionStorage.setItem(
-        `reverie_listing_${listing.listing_id}`,
-        listing.listing_id,
-      );
-      window.location.href = result.checkout_url;
+      setDeposit(result.deposit);
+      setSandboxOpen(true);
+      await loadListing();
     } catch (error) {
       toast.error((error as ApiError).message ?? "Checkout failed");
+    } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleConfirmSandboxPayment = async () => {
+    if (!listing) return;
+    setConfirming(true);
+    try {
+      const token = await getToken();
+      const result = await confirmPayment(token, listing.listing_id);
+      toast.success(result.message);
+      setSandboxOpen(false);
+      setDeposit(null);
+      await loadListing();
+    } catch (error) {
+      toast.error((error as ApiError).message ?? "Sandbox payment failed");
+    } finally {
+      setConfirming(false);
     }
   };
 
@@ -93,7 +109,7 @@ export default function ListingDetailPage() {
     try {
       const token = await getToken();
       await settle(token, listing.listing_id);
-      toast.success("Purchase settled. Payout initiated to seller.");
+      toast.success("Purchase settled. Sandbox payout recorded for seller.");
       await loadListing();
     } catch (error) {
       toast.error((error as ApiError).message ?? "Settlement failed");
@@ -199,6 +215,30 @@ export default function ListingDetailPage() {
                 {isAuthenticated ? "Buy now" : "Log in to buy"}
               </Button>
             )}
+            {listing.status === "pending_payment" && isBuyer && (
+              <Button
+                onClick={() => {
+                  setDeposit({
+                    mode: "sandbox",
+                    session_id: `uf_resume_${listing.listing_id.slice(0, 8)}`,
+                    external_user_id: listing.buyer_id ?? "",
+                    recipient_address: "0x606C49ca2Fa4982F07016265040F777eD3DA3160",
+                    destination_chain_type: "ethereum",
+                    destination_chain_id: "8453",
+                    destination_token_address:
+                      "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+                    destination_token_symbol: "USDC",
+                    amount_usdc: listing.price_usdc,
+                    listing_id: listing.listing_id,
+                    seller_id: listing.seller_id,
+                  });
+                  setSandboxOpen(true);
+                }}
+                disabled={actionLoading}
+              >
+                Complete sandbox payment
+              </Button>
+            )}
             {listing.status === "locked_in_escrow" && isBuyer && (
               <Button onClick={handleSettle} disabled={actionLoading}>
                 {actionLoading && <Loader2 className="animate-spin" />}
@@ -217,6 +257,18 @@ export default function ListingDetailPage() {
           </div>
         </div>
       </div>
+
+      <UnifoldSandboxCheckout
+        open={sandboxOpen}
+        deposit={deposit}
+        listingTitle={listing.title}
+        confirming={confirming}
+        onConfirm={handleConfirmSandboxPayment}
+        onCancel={() => {
+          if (confirming) return;
+          setSandboxOpen(false);
+        }}
+      />
     </div>
   );
 }

@@ -63,8 +63,11 @@ def run_marketplace_tests():
         res = buyer_client.post(f"/api/marketplace/checkout/{material_listing_id}")
         assert res.status_code == 200, f"Checkout failed: {res.text}"
         checkout_data = res.json()
-        print(f"Checkout URL generated: {checkout_data['checkout_url']}")
         assert checkout_data["status"] == "pending_payment"
+        assert checkout_data["mode"] == "sandbox"
+        assert "deposit" in checkout_data
+        assert checkout_data["deposit"]["amount_usdc"] == 15.5
+        print(f"Sandbox session: {checkout_data['deposit']['session_id']}")
         print("Passed: Checkout session created, listing status -> pending_payment.")
 
         # Verify listing no longer shows in active browse
@@ -73,21 +76,13 @@ def run_marketplace_tests():
         assert material_listing_id not in active_ids, "Pending payment listing should not be in active browse"
         print("Passed: pending_payment listing hidden from marketplace.")
 
-        # 5. Simulate Unifold deposit.settled Webhook (Buyer pays)
-        print("\n[Step 5] Simulate Unifold Webhook (deposit.settled)...")
-        # In testing mode, the webhook ignores signature verification when secret is missing,
-        # but let's test the endpoint logic anyway.
-        webhook_payload = {
-            "event_type": "deposit.settled",
-            "transaction_id": "0xABC123",
-            "metadata": {
-                "listing_id": material_listing_id,
-                "buyer_id": "mock_token_buyer_user"
-            }
-        }
-        res = httpx.post(f"{BASE_URL}/api/webhooks/unifold", json=webhook_payload)
-        assert res.status_code == 200, f"Webhook failed: {res.text}"
-        print("Passed: deposit.settled webhook accepted.")
+        # 5. Buyer completes Unifold sandbox payment (simulates deposit.settled)
+        print("\n[Step 5] Buyer confirms sandbox payment...")
+        res = buyer_client.post(f"/api/marketplace/confirm-payment/{material_listing_id}")
+        assert res.status_code == 200, f"Confirm payment failed: {res.text}"
+        confirm_data = res.json()
+        assert confirm_data["status"] == "locked_in_escrow"
+        print(f"Passed: sandbox payment settled (tx: {confirm_data['transaction_id']}).")
 
         # Verify listing status is now locked_in_escrow
         res = httpx.get(f"{BASE_URL}/api/marketplace/{material_listing_id}")
@@ -103,23 +98,37 @@ def run_marketplace_tests():
         assert settle_data["status"] == "sold"
         print("Passed: Settle successful, listing status -> sold.")
 
-        # 7. Simulate Unifold payout.settled Webhook
-        print("\n[Step 7] Simulate Unifold Webhook (payout.settled)...")
-        webhook_payload_payout = {
-            "event_type": "payout.settled",
-            "transaction_id": "0xDEF456",
+        # Verify sandbox payout tx recorded
+        res = httpx.get(f"{BASE_URL}/api/marketplace/{material_listing_id}")
+        assert res.json()["transaction_id"] is not None
+        print(f"Passed: Sandbox payout tx recorded: {res.json()['transaction_id']}")
+
+        # 7. Webhook path still works (deposit.settled / payout.settled)
+        print("\n[Step 7] Webhook endpoint still accepts Unifold-shaped events...")
+        tool_data = {
+            "title": "Webhook Test Tool",
+            "price_usdc": 5.0,
+            "category": "tool"
+        }
+        res = seller_client.post("/api/marketplace/list", json=tool_data)
+        assert res.status_code == 201
+        webhook_listing_id = res.json()["listing_id"]
+        res = buyer_client.post(f"/api/marketplace/checkout/{webhook_listing_id}")
+        assert res.status_code == 200
+
+        webhook_payload = {
+            "event_type": "deposit.settled",
+            "transaction_id": "0xABC123",
             "metadata": {
-                "listing_id": material_listing_id
+                "listing_id": webhook_listing_id,
+                "buyer_id": "buyer_user"
             }
         }
-        res = httpx.post(f"{BASE_URL}/api/webhooks/unifold", json=webhook_payload_payout)
+        res = httpx.post(f"{BASE_URL}/api/webhooks/unifold", json=webhook_payload)
         assert res.status_code == 200, f"Webhook failed: {res.text}"
-        print("Passed: payout.settled webhook accepted.")
-
-        # Verify transaction ID is recorded
-        res = httpx.get(f"{BASE_URL}/api/marketplace/{material_listing_id}")
-        assert res.json()["transaction_id"] == "0xDEF456"
-        print("Passed: Transaction hash recorded on listing.")
+        res = httpx.get(f"{BASE_URL}/api/marketplace/{webhook_listing_id}")
+        assert res.json()["status"] == "locked_in_escrow"
+        print("Passed: deposit.settled webhook still accepted.")
 
         # 8. Test Seller Cannot Buy Own Item
         print("\n[Step 8] Test seller cannot buy own item...")

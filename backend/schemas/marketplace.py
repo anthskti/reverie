@@ -53,10 +53,34 @@ class ListingCreatedResponse(BaseModel):
     listing_id: str
 
 
+class DepositSession(BaseModel):
+    """Connect-shaped deposit params for the local Unifold sandbox UI."""
+
+    mode: str = "sandbox"
+    session_id: str
+    external_user_id: str
+    recipient_address: str
+    destination_chain_type: str
+    destination_chain_id: str
+    destination_token_address: str
+    destination_token_symbol: str
+    amount_usdc: float
+    listing_id: str
+    seller_id: str
+
+
 class CheckoutResponse(BaseModel):
     listing_id: str
-    checkout_url: str
     status: str  # pending_payment
+    mode: str = "sandbox"
+    deposit: DepositSession
+
+
+class ConfirmPaymentResponse(BaseModel):
+    listing_id: str
+    status: str  # locked_in_escrow
+    transaction_id: str
+    message: str
 
 
 class ListingResponse(BaseModel):

@@ -108,10 +108,32 @@ export interface ListItemRequest {
   item_id?: string;
 }
 
+export interface DepositSession {
+  mode: string;
+  session_id: string;
+  external_user_id: string;
+  recipient_address: string;
+  destination_chain_type: string;
+  destination_chain_id: string;
+  destination_token_address: string;
+  destination_token_symbol: string;
+  amount_usdc: number;
+  listing_id: string;
+  seller_id: string;
+}
+
 export interface CheckoutResponse {
   listing_id: string;
-  checkout_url: string;
   status: string;
+  mode: string;
+  deposit: DepositSession;
+}
+
+export interface ConfirmPaymentResponse {
+  listing_id: string;
+  status: string;
+  transaction_id: string;
+  message: string;
 }
 
 export interface ApiError {

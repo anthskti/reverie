@@ -36,7 +36,7 @@ export function ListingStatusTimeline({ status }: { status: string }) {
 
 export function getListingStatusMessage(listing: Listing, isBuyer: boolean): string | null {
   if (listing.status === "pending_payment" && isBuyer) {
-    return "Complete payment in the checkout window. This listing will move to escrow once payment settles.";
+    return "Finish the Unifold sandbox checkout to move this listing into escrow. No real payment is charged.";
   }
   if (listing.status === "locked_in_escrow" && isBuyer) {
     return "Payment is in escrow. Mark as received once your item arrives to release funds to the seller.";

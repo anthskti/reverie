@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, Query, status
 from core.auth import verify_token
 from schemas.marketplace import (
     CheckoutResponse,
+    ConfirmPaymentResponse,
+    DepositSession,
     ListingCreatedResponse,
     ListingResponse,
     ListItemRequest,
@@ -114,17 +116,46 @@ async def checkout(
     listing_id: str,
     token_payload: dict = Depends(verify_token),
 ):
-    """Initiate a Unifold Sandbox checkout session as the buyer."""
+    """Start a local Unifold sandbox deposit session as the buyer."""
     buyer_id = token_payload["sub"]
     service = MarketplaceService()
-    checkout_url = await service.checkout(
-        listing_id=listing_id, buyer_id=buyer_id
-    )
+    deposit = await service.checkout(listing_id=listing_id, buyer_id=buyer_id)
     return CheckoutResponse(
         listing_id=listing_id,
-        checkout_url=checkout_url,
         status="pending_payment",
+        mode="sandbox",
+        deposit=DepositSession(
+            mode=deposit["mode"],
+            session_id=deposit["session_id"],
+            external_user_id=deposit["external_user_id"],
+            recipient_address=deposit["recipient_address"],
+            destination_chain_type=deposit["destination_chain_type"],
+            destination_chain_id=deposit["destination_chain_id"],
+            destination_token_address=deposit["destination_token_address"],
+            destination_token_symbol=deposit["destination_token_symbol"],
+            amount_usdc=deposit["amount_usdc"],
+            listing_id=deposit["listing_id"],
+            seller_id=deposit["seller_id"],
+        ),
     )
+
+
+# POST /marketplace/confirm-payment/{listing_id}
+@router.post(
+    "/confirm-payment/{listing_id}",
+    response_model=ConfirmPaymentResponse,
+)
+async def confirm_payment(
+    listing_id: str,
+    token_payload: dict = Depends(verify_token),
+):
+    """Simulate Unifold deposit.settled for the local sandbox checkout UI."""
+    buyer_id = token_payload["sub"]
+    service = MarketplaceService()
+    result = await service.confirm_sandbox_payment(
+        listing_id=listing_id, buyer_id=buyer_id
+    )
+    return ConfirmPaymentResponse(**result)
 
 
 # POST /marketplace/settle/{listing_id}
@@ -133,12 +164,12 @@ async def settle_purchase(
     listing_id: str,
     token_payload: dict = Depends(verify_token),
 ):
-    """Mark as received and trigger escrow payout to the seller (buyer only)."""
+    """Mark as received and trigger sandbox escrow payout to the seller."""
     buyer_id = token_payload["sub"]
     service = MarketplaceService()
     await service.settle_purchase(listing_id=listing_id, buyer_id=buyer_id)
     return SettleResponse(
         listing_id=listing_id,
         status="sold",
-        message="Settlement successful. Payout initiated to seller.",
+        message="Settlement successful. Sandbox payout recorded for seller.",
     )
