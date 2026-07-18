@@ -1,0 +1,44 @@
+services:
+  # Direct Postgres connection (port 5432) — use for migrations / DDL.
+  db:
+    image: postgres:16-alpine
+    container_name: reverie-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - reverie_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Supabase-style session pooler (Supavisor/PgBouncer equivalent) on 6543.
+  pooler:
+    image: edoburu/pgbouncer:latest
+    container_name: reverie-pooler
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: ${POSTGRES_DB:-postgres}
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: session
+      LISTEN_PORT: 6432
+      MAX_CLIENT_CONN: 200
+      DEFAULT_POOL_SIZE: 20
+    ports:
+      - "${POOLER_PORT:-6543}:6432"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  reverie_pgdata:
