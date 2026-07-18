@@ -170,8 +170,8 @@ export default function ListingDetailPage() {
             <Badge variant="outline" className="mb-2 capitalize">
               {listing.category.replace("_", " ")}
             </Badge>
-            <h1 className="text-3xl font-bold">{listing.title}</h1>
-            <p className="mt-2 text-2xl font-semibold text-primary">
+            <h1 className="text-3xl font-black text-primary">{listing.title}</h1>
+            <p className="mt-2 text-2xl font-bold text-primary">
               {formatUsdc(listing.price_usdc)}
             </p>
           </div>
@@ -187,7 +187,7 @@ export default function ListingDetailPage() {
           <ListingStatusTimeline status={listing.status} />
 
           {statusMessage && (
-            <Card className="border-primary/20 bg-accent/20">
+            <Card className="border-primary/20 bg-accent/15">
               <CardContent className="p-4 text-sm">{statusMessage}</CardContent>
             </Card>
           )}

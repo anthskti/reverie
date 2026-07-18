@@ -150,7 +150,7 @@ export default function UpcyclePage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Upcycle quest</h1>
+        <h1 className="text-3xl font-black text-primary">Upcycle quest</h1>
         <p className="mt-2 text-muted-foreground">
           Transform a garment with AI-guided design and sewing instructions.
         </p>
@@ -248,7 +248,7 @@ export default function UpcyclePage() {
 
       {step === 1 && ideation && (
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Choose your concept</h2>
+          <h2 className="text-xl font-bold text-primary">Choose your concept</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {ideation.options.map((option, index) => {
               const mockupUrl =
@@ -260,8 +260,8 @@ export default function UpcyclePage() {
               return (
                 <Card
                   key={option.title}
-                  className={`cursor-pointer transition-all ${
-                    isSelected ? "ring-2 ring-primary" : "hover:shadow-md"
+                  className={`cursor-pointer overflow-hidden transition-all ${
+                    isSelected ? "ring-2 ring-primary" : "hover:border-primary/25 hover:shadow-lg"
                   }`}
                   onClick={() => setSelectedConcept(option)}
                 >
@@ -277,7 +277,7 @@ export default function UpcyclePage() {
                     ) : null}
                   </div>
                   <CardContent className="space-y-2 p-4">
-                    <h3 className="font-semibold">{option.title}</h3>
+                    <h3 className="font-bold">{option.title}</h3>
                     <p className="text-sm text-muted-foreground line-clamp-3">
                       {option.description}
                     </p>
@@ -369,11 +369,11 @@ export default function UpcyclePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
-              <div className="text-4xl font-bold text-primary">
+              <div className="text-4xl font-black text-primary">
                 {verification.score}/100
               </div>
               <div>
-                <p className="font-medium">Quality score</p>
+                <p className="font-semibold">Quality score</p>
                 {verification.is_eligible && (
                   <Badge variant="success">Marketplace eligible</Badge>
                 )}

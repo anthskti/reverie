@@ -10,7 +10,7 @@ export function ItemCard({ item }: { item: Item }) {
 
   return (
     <Link href={`/inventory/${item.id}`}>
-      <Card className="overflow-hidden transition-shadow hover:shadow-md">
+      <Card className="overflow-hidden border-border transition-all hover:border-primary/25 hover:shadow-lg">
         <div className="relative aspect-square bg-muted">
           {imageUrl ? (
             <Image
@@ -28,7 +28,7 @@ export function ItemCard({ item }: { item: Item }) {
         </div>
         <CardContent className="space-y-2 p-4">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-medium line-clamp-1">
+            <h3 className="font-bold line-clamp-1">
               {item.style ?? "Untitled garment"}
             </h3>
             {item.is_market_eligible && (
@@ -49,9 +49,9 @@ export function ItemCard({ item }: { item: Item }) {
 export function InventoryGrid({ items }: { items: Item[] }) {
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed p-12 text-center">
+      <div className="rounded-2xl border border-dashed border-border p-12 text-center">
         <p className="text-muted-foreground">No items in your wardrobe yet.</p>
-        <Link href="/upcycle" className="mt-4 inline-block text-primary hover:underline">
+        <Link href="/upcycle" className="mt-4 inline-block font-semibold text-primary hover:underline">
           Start your first upcycle →
         </Link>
       </div>

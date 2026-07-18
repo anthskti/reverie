@@ -91,7 +91,7 @@ export default function InventoryItemPage() {
 
         <div className="space-y-4">
           <div>
-            <h1 className="text-3xl font-bold">{item.style ?? "Garment"}</h1>
+            <h1 className="text-3xl font-black text-primary">{item.style ?? "Garment"}</h1>
             <p className="text-muted-foreground capitalize">
               {item.difficulty ?? "unknown difficulty"} · {item.fabric_type ?? "unknown fabric"}
             </p>

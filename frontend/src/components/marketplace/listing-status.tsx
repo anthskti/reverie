@@ -18,9 +18,9 @@ export function ListingStatusTimeline({ status }: { status: string }) {
         return (
           <div
             key={step.key}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${
+            className={`rounded-full px-3 py-1 text-xs font-bold ${
               isCurrent
-                ? "bg-primary text-primary-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm shadow-primary/25"
                 : isActive
                   ? "bg-accent text-accent-foreground"
                   : "bg-muted text-muted-foreground"

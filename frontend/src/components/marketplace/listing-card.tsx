@@ -16,7 +16,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
 
   return (
     <Link href={`/marketplace/${listing.listing_id}`}>
-      <Card className="overflow-hidden transition-shadow hover:shadow-md">
+      <Card className="overflow-hidden border-border transition-all hover:border-primary/25 hover:shadow-lg">
         <div className="relative aspect-[4/3] bg-muted">
           {imageUrl ? (
             <Image
@@ -34,12 +34,12 @@ export function ListingCard({ listing }: { listing: Listing }) {
         </div>
         <CardContent className="space-y-2 p-4">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-medium line-clamp-2">{listing.title}</h3>
+            <h3 className="font-bold line-clamp-2">{listing.title}</h3>
             <Badge variant="outline" className="shrink-0 capitalize">
               {categoryLabels[listing.category] ?? listing.category}
             </Badge>
           </div>
-          <p className="text-lg font-semibold text-primary">
+          <p className="text-lg font-bold text-primary">
             {formatUsdc(listing.price_usdc)}
           </p>
         </CardContent>
@@ -51,7 +51,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
 export function ListingGrid({ listings }: { listings: Listing[] }) {
   if (listings.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed p-12 text-center text-muted-foreground">
+      <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground">
         No listings found.
       </div>
     );
