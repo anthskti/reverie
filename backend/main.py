@@ -3,6 +3,8 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
+from fastapi.staticfiles import StaticFiles
+
 from controllers.pipeline import router as pipeline_router
 from controllers.projects import router as projects_router
 from database import dispose_engines, init_models, is_configured
@@ -25,6 +27,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Comment Out when in Prod
+# Ensure the static directory exists and mount it
+import os
+os.makedirs("static", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Comment Out when in Prod
+
 app.include_router(pipeline_router)
 app.include_router(projects_router)
 
@@ -36,4 +46,4 @@ def read_root():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "database_configured": is_configured()}
+    return {"status": "reverie is live", "database_configured": is_configured()}

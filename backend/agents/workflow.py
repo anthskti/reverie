@@ -8,6 +8,7 @@ from google import genai
 from google.genai import types
 from supabase import Client, create_client
 
+from agents.auth_vertex import setup_vertex_credentials
 from agents.runner import (
     generate_concepts,
     generate_mockup,
@@ -23,10 +24,22 @@ from schemas.verification import VerificationResult
 
 class UpcycleWorkflow:
     def __init__(self, supabase_client: Client | None):
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise RuntimeError("GEMINI_API_KEY environment variable is required")
-        self.ai_client = genai.Client(api_key=api_key)
+        project = os.getenv("GOOGLE_CLOUD_PROJECT")
+        creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
+
+        if project or creds_json:
+            setup_vertex_credentials()
+            self.ai_client = genai.Client(
+                vertexai=True,
+                project=project,
+                location=os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
+            )
+        else:
+            api_key = os.getenv("GEMINI_API_KEY")
+            if not api_key:
+                raise RuntimeError("Either GEMINI_API_KEY or GOOGLE_CLOUD_PROJECT/GOOGLE_CREDENTIALS_JSON must be set.")
+            self.ai_client = genai.Client(api_key=api_key)
+
         self.db = UpcycleRepository(supabase_client)
 
     # --- Phase 1: Ideation ---------------------------------------------------
@@ -123,7 +136,10 @@ class UpcycleWorkflow:
                     index,
                     image_bytes,
                 )
-            except Exception:
+            except Exception as exc:
+                import traceback
+                print(f"Error generating mockup {index}: {exc}")
+                traceback.print_exc()
                 return None
 
         return list(await asyncio.gather(*[_one(i, opt) for i, opt in enumerate(options)]))
@@ -210,17 +226,44 @@ class UpcycleWorkflow:
             data=completion_image_bytes, mime_type=mime_type
         )
 
-        concept = project.selected_concept
+        concept = project.selected_concept or {}
+        mockup_url = concept.get("mockup_url")
+        mockup_image_part = None
+
+        if mockup_url:
+            try:
+                if mockup_url.startswith("/static/"):
+                    import os
+                    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    path = os.path.join(base_dir, mockup_url.lstrip("/"))
+                    with open(path, "rb") as f:
+                        mockup_bytes = f.read()
+                    mockup_image_part = types.Part.from_bytes(
+                        data=mockup_bytes, mime_type="image/jpeg"
+                    )
+                elif mockup_url.startswith("http"):
+                    import httpx
+                    async with httpx.AsyncClient() as client:
+                        res = await client.get(mockup_url, timeout=10.0)
+                        if res.status_code == 200:
+                            mockup_image_part = types.Part.from_bytes(
+                                data=res.content, mime_type="image/jpeg"
+                            )
+            except Exception as e:
+                # Log error but don't fail verification if mockup loading fails
+                print(f"Error loading mockup image for verification: {e}")
+
         result: VerificationResult = await asyncio.to_thread(
             verify_garment,
             self.ai_client,
             completion_image,
+            mockup_image_part,
             concept.get("title", "Unknown"),
             concept.get("description", ""),
             project.sewing_guide or "",
         )
 
-        is_eligible = result.score >= 70
+        is_eligible = result.score >= 50
 
         # Update marketplace eligibility
         await self.db.update_item_eligibility(item_id, is_eligible)

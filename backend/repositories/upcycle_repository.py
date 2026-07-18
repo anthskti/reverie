@@ -41,10 +41,18 @@ class UpcycleRepository:
     ) -> tuple[str, str]:
         """Upload an inventory image. Returns (item_id, public_url_or_path)."""
         item_id = str(uuid.uuid4())
-        if not self.storage_client:
-            return item_id, f"local://inventory/{user_id}/{item_id}"
-
         extension = "jpg" if mime_type == "image/jpeg" else mime_type.split("/")[-1]
+        
+        if not self.storage_client:
+            import os
+            # Save to local static directory
+            static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
+            os.makedirs(os.path.join(static_dir, "inventory", user_id), exist_ok=True)
+            file_path = os.path.join(static_dir, "inventory", user_id, f"{item_id}.{extension}")
+            with open(file_path, "wb") as f:
+                f.write(image_bytes)
+            return item_id, f"/static/inventory/{user_id}/{item_id}.{extension}"
+
         path = f"{user_id}/{item_id}.{extension}"
         self.storage_client.storage.from_("inventory").upload(
             path,
@@ -62,7 +70,14 @@ class UpcycleRepository:
         image_bytes: bytes,
     ) -> str:
         if not self.storage_client:
-            return f"local://mockups/{user_id}/{item_id}/{index}.jpg"
+            import os
+            # Save to local static directory
+            static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
+            os.makedirs(os.path.join(static_dir, "mockups", user_id, item_id), exist_ok=True)
+            file_path = os.path.join(static_dir, "mockups", user_id, item_id, f"{index}.jpg")
+            with open(file_path, "wb") as f:
+                f.write(image_bytes)
+            return f"/static/mockups/{user_id}/{item_id}/{index}.jpg"
 
         path = f"{user_id}/{item_id}/mockup_{index}.jpg"
         self.storage_client.storage.from_("mockups").upload(

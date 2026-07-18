@@ -22,12 +22,18 @@ async def ideate(
     generate_mockups: bool = Form(default=False),
 ):
     """Phase 1: upload a garment image and generate 3 upcycling concepts."""
-    try:
-        tools = json.loads(tools_available)
-        if not isinstance(tools, list):
-            raise ValueError("tools_available must be a JSON array of strings")
-    except (json.JSONDecodeError, ValueError) as exc:
-        raise HTTPException(status_code=400, detail=f"Invalid tools_available: {exc}") from exc
+    # Parse robustly: support JSON array or fallback to comma-separated values
+    tools_available_clean = tools_available.strip()
+    if tools_available_clean.startswith("[") and tools_available_clean.endswith("]"):
+        try:
+            tools = json.loads(tools_available_clean)
+            if not isinstance(tools, list):
+                raise ValueError("tools_available must be a list")
+        except (json.JSONDecodeError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail=f"Invalid JSON array for tools_available: {exc}") from exc
+    else:
+        # Fallback for comma-separated lists (e.g. from automatic form serialization)
+        tools = [t.strip() for t in tools_available_clean.split(",") if t.strip()]
 
     image_bytes = await image.read()
     if not image_bytes:
