@@ -1,3 +1,12 @@
+def search_sewing_materials(material_name: str) -> str:
+    """Searches for sewing materials and returns a purchase link.
+
+    Always call this when a specific hardware or fabric is needed for the
+    upcycling project (e.g. zippers, dye, patches, thread).
+    """
+    return f"/marketplace?q={material_name}"
+
+
 def calculate_environmental_impact(weight_kg: float, fabric_type: str) -> dict:
     """Calculates the environmental savings of diverting a garment from a landfill."""
     multiplier = 2700 if fabric_type.lower() == "cotton" else 1000
@@ -6,3 +15,4 @@ def calculate_environmental_impact(weight_kg: float, fabric_type: str) -> dict:
         "co2_offset_kg": weight_kg * 15.0,
         "landfill_diverted_kg": weight_kg,
     }
+

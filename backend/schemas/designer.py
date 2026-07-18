@@ -6,6 +6,7 @@ class UpcycleOption(BaseModel):
     description: str = Field(description="Brief explanation of the style")
     techniques: list[str] = Field(description="List of sewing/crafting techniques needed")
     difficulty: str = Field(description="easy, medium, or hard")
+    mockup_url: str | None = Field(default=None, description="URL of the generated mockup image")
 
 
 class DesignerResponse(BaseModel):

@@ -5,6 +5,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from agents.workflow import get_workflow
 from schemas.execution import ExecutionRequest, ExecutionResponse
 from schemas.ideation import IdeationResponse
+from schemas.verification import VerificationResponse
 
 router = APIRouter(prefix="/upcycle", tags=["upcycle"])
 
@@ -15,6 +16,8 @@ async def ideate(
     user_id: str = Form(...),
     style: str = Form(...),
     difficulty: str = Form(...),
+    fabric_type: str = Form(default=None),
+    weight_kg: float = Form(default=None),
     tools_available: str = Form(default='["scissors", "sewing machine"]'),
     generate_mockups: bool = Form(default=False),
 ):
@@ -42,6 +45,8 @@ async def ideate(
             tools_available=tools,
             mime_type=mime_type,
             generate_mockups=generate_mockups,
+            fabric_type=fabric_type,
+            weight_kg=weight_kg,
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -61,7 +66,8 @@ async def execute(body: ExecutionRequest):
             user_id=body.user_id,
             item_id=body.item_id,
             selected_concept=body.selected_concept,
-            item_metadata=body.item_metadata,
+            fabric_type=body.fabric_type,
+            weight_kg=body.weight_kg,
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -69,3 +75,33 @@ async def execute(body: ExecutionRequest):
         raise HTTPException(status_code=502, detail=f"Execution failed: {exc}") from exc
 
     return ExecutionResponse(**result)
+
+
+@router.post("/{item_id}/verify", response_model=VerificationResponse)
+async def verify(
+    item_id: str,
+    image: UploadFile = File(...),
+):
+    """Phase 3: verify a completed garment against the original design and instructions."""
+    image_bytes = await image.read()
+    if not image_bytes:
+        raise HTTPException(status_code=400, detail="Empty image upload")
+
+    mime_type = image.content_type or "image/jpeg"
+    workflow = get_workflow()
+
+    try:
+        result = await workflow.run_verification(
+            item_id=item_id,
+            completion_image_bytes=image_bytes,
+            mime_type=mime_type,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Verification failed: {exc}") from exc
+
+    return VerificationResponse(**result)
+

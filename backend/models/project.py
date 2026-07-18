@@ -21,9 +21,11 @@ class Project(Base):
     selected_concept: Mapped[dict] = mapped_column(JSONB, nullable=False)
     sewing_guide: Mapped[str | None] = mapped_column(Text, nullable=True)
     environmental_impact: Mapped[str | None] = mapped_column(Text, nullable=True)
+    environmental_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     __table_args__ = (
         Index("idx_projects_user_id", "user_id"),
         Index("idx_projects_item_id", "item_id"),
     )
+
