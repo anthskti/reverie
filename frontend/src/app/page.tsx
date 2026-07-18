@@ -61,9 +61,8 @@ export default async function HomePage() {
 
         <div className="relative mx-auto max-w-4xl px-4 pb-32 pt-24 text-center md:pb-40 md:pt-32">
           <Reveal>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold backdrop-blur-sm">
-              <Leaf className="h-4 w-4 text-accent" />
-              Eco-friendly upcycling, made fun
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-3 text-lg md:text-xl font-extrabold backdrop-blur-sm">
+              Reverie
             </span>
           </Reveal>
 
@@ -85,7 +84,7 @@ export default async function HomePage() {
           <Reveal delay={0.18}>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-primary-foreground/90 md:text-xl">
               <strong className="font-bold text-white">Our mission:</strong>{" "}
-              Reverie helps you transform old clothes into something you love —
+              Reverie helps you transform old clothes into something you love,
               with AI design, sewing guides, impact tracking, and a marketplace
               built for circular fashion.
             </p>
@@ -143,7 +142,7 @@ export default async function HomePage() {
               What our community has saved
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Every upcycle adds up — water, carbon, and landfill diverted.
+              Every upcycle adds up: water, carbon, and landfill diverted.
             </p>
           </div>
         </Reveal>

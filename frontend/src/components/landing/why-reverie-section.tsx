@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useCounter } from "@/components/motion/use-counter";
 import { Reveal } from "@/components/motion/reveal";
 import { cn } from "@/lib/utils";
@@ -10,28 +11,45 @@ type Reason = {
   prefix?: string;
   decimals?: number;
   title: string;
-  description: string;
+  description: string | ReactNode;
 };
 
 const reasons: Reason[] = [
   {
     value: 92,
     suffix: "M",
-    title: "Tons of textile waste every year",
-    description:
-      "Fashion churns out mountains of discarded clothes. Reverie gives garments a second life instead of a landfill trip.",
+    title: <a
+        href="https://earth.org/how-repairing-clothes-slows-down-climate-change/"
+        target="_blank"
+        rel="noreferrer"
+        className="text-primary underline"
+      >"Tons of textile waste every year"</a>,
+    description: (
+
+        "Fashion churns out mountains of discarded clothes. Reverie gives garments a second life instead of a landfill trip."
+    ),
   },
   {
     value: 2700,
     suffix: "L",
-    title: "Of water for one cotton tee",
+    title:<a
+        href="https://www.europarl.europa.eu/topics/en/article/20201208STO93327/fast-fashion-eu-laws-for-sustainable-textile-consumption"
+        target="_blank"
+        rel="noreferrer"
+        className="text-primary underline"
+      >Of water for one cotton tee</a>,
     description:
       "Every new piece costs the planet. Upcycling what you already own saves water, energy, and raw materials.",
   },
   {
     value: 60,
     suffix: "%",
-    title: "Of clothes end up in landfills",
+    title: <a
+        href="https://www.europarl.europa.eu/topics/en/article/20201208STO93327/fast-fashion-eu-laws-for-sustainable-textile-consumption"
+        target="_blank"
+        rel="noreferrer"
+        className="text-primary underline"
+      >Of clothes end up in landfills</a>,
     description:
       "Most wardrobes are full of untapped potential. We built Reverie so creativity beats consumption.",
   },

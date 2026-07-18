@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Leaf, LogOut, User } from "lucide-react";
 import { useAuthModal } from "@/components/providers/auth-modal-provider";
+import Image from "next/image";
+
 
 const navLinks = [
   { href: "/upcycle", label: "Upcycle" },
@@ -31,10 +33,13 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary shadow-sm">
-            <Leaf className="h-4 w-4 text-primary-foreground" />
-          </span>
-          <span className="text-xl font-black text-primary">Reverie</span>
+          <Image
+            src="/reverie2.webp"
+            alt="Reverie logo"
+            width={48}
+            height={48}
+            className="h-12 w-12 rounded-full object-cover"
+          />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
@@ -105,7 +110,7 @@ export function Footer() {
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent">
             <Leaf className="h-3.5 w-3.5 text-accent-foreground" />
           </span>
-          Reverie — gamified upcycling for a circular wardrobe
+          Reverie: gamified upcycling for a circular wardrobe
         </div>
         <div className="flex gap-6 text-sm font-semibold text-primary-foreground/80">
           <Link href="/marketplace" className="hover:text-primary-foreground">

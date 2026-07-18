@@ -12,7 +12,7 @@ const features = [
     badge: "Marketplace",
     title: "Shop one-of-a-kind upcycles",
     description:
-      "Browse verified, handmade pieces from real upcyclers. Every listing tells a story — and keeps textiles out of the trash.",
+      "Browse verified, handmade pieces from real upcyclers. Every listing tells a story and keeps textiles out of the trash.",
     highlights: ["Community sellers", "Verified craftsmanship", "Unique finds"],
     href: "/marketplace",
     cta: "Explore Marketplace",

@@ -26,7 +26,7 @@ export function LandingCta() {
               Ready to grow a wardrobe that&apos;s kind to the planet?
             </h2>
             <p className="mt-4 text-lg text-primary-foreground/85">
-              Start your first upcycle in minutes — or discover something
+              Start your first upcycle in minutes or discover something
               unique from a fellow maker.
             </p>
             <div className="mt-9 flex flex-wrap justify-center gap-4">
