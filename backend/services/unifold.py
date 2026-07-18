@@ -98,7 +98,11 @@ async def trigger_payout(
         "amount_usdc": amount_usdc,
     }
 
+    headers = _headers()
+    # Use the listing_id as the idempotency key so this payout can never be executed twice
+    headers["Idempotency-Key"] = listing_id
+
     async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-        response = await client.post(url, json=payload, headers=_headers())
+        response = await client.post(url, json=payload, headers=headers)
         response.raise_for_status()
         return response.json()
