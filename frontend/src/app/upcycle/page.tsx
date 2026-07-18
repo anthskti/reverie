@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { useApiClient } from "@/lib/auth/use-api-client";
 import { ideate, execute, verifyItem } from "@/lib/api/upcycle";
+import { useAuthModal } from "@/components/providers/auth-modal-provider";
 import type {
   ApiError,
   ExecutionResponse,
@@ -42,7 +43,8 @@ const STEPS = [
 
 export default function UpcyclePage() {
   const router = useRouter();
-  const { getToken } = useApiClient();
+  const { getToken, isAuthenticated } = useApiClient();
+  const { openAuthModal } = useAuthModal();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -71,6 +73,10 @@ export default function UpcyclePage() {
   }, []);
 
   const handleIdeate = async () => {
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
     if (!image) {
       toast.error("Please upload a garment photo");
       return;

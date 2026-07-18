@@ -7,7 +7,7 @@ import { useApiClient } from "@/lib/auth/use-api-client";
 import { getMyItems, getMyStats } from "@/lib/api/inventory";
 import { getProjects } from "@/lib/api/projects";
 import { buildGamificationProfile } from "@/lib/gamification";
-import type { Item, UserStats } from "@/lib/types";
+import type { Item, UserStats, Project, ApiError } from "@/lib/types";
 import {
   BadgeGrid,
   GamificationHeader,
@@ -16,19 +16,26 @@ import {
 import { InventoryGrid } from "@/components/inventory/item-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import type { ApiError } from "@/lib/types";
+import { useAuthModal } from "@/components/providers/auth-modal-provider";
 
 export default function ProfilePage() {
   const { user } = useAuth0();
   const { getToken, isAuthenticated } = useApiClient();
+  const { openAuthModal } = useAuthModal();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [items, setItems] = useState<Item[]>([]);
-  const [projectsCount, setProjectsCount] = useState(0);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
 
     async function load() {
       try {
@@ -40,7 +47,7 @@ export default function ProfilePage() {
         ]);
         setStats(statsData);
         setItems(itemsData);
-        setProjectsCount(projectsData.projects.length);
+        setProjects(projectsData.projects);
       } catch (error) {
         const apiError = error as ApiError;
         toast.error(apiError.message ?? "Failed to load profile");
@@ -50,7 +57,17 @@ export default function ProfilePage() {
     }
 
     load();
-  }, [getToken, isAuthenticated]);
+  }, [getToken, isAuthenticated, openAuthModal]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center space-y-4 px-4 text-center">
+        <h1 className="text-2xl font-bold">Please log in</h1>
+        <p className="text-muted-foreground">You need to log in to view your profile.</p>
+        <Button onClick={() => openAuthModal()}>Log In</Button>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -77,7 +94,7 @@ export default function ProfilePage() {
     typeof window !== "undefined" &&
     sessionStorage.getItem("reverie_has_listed") === "1";
 
-  const gamification = buildGamificationProfile(stats, projectsCount, {
+  const gamification = buildGamificationProfile(stats, projects.length, {
     hasListed,
     bestVerificationScore: Number(
       typeof window !== "undefined"
@@ -98,31 +115,81 @@ export default function ProfilePage() {
           <Link href="/upcycle">New upcycle</Link>
         </Button>
         <Button asChild variant="outline">
-          <Link href="/projects">View projects</Link>
-        </Button>
-        <Button asChild variant="outline">
           <Link href="/marketplace/sell">Sell an item</Link>
         </Button>
       </div>
 
-      <section>
-        <h2 className="mb-4 text-xl font-semibold">Your impact</h2>
-        <ImpactStats
-          water={stats.water_saved_l}
-          co2={stats.co2_offset_kg}
-          landfill={stats.landfill_diverted_kg}
-        />
-      </section>
+      <Tabs defaultValue="stats" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="stats">Impact & Stats</TabsTrigger>
+          <TabsTrigger value="inventory">Inventory</TabsTrigger>
+          <TabsTrigger value="projects">Projects</TabsTrigger>
+        </TabsList>
 
-      <section>
-        <h2 className="mb-4 text-xl font-semibold">Achievements</h2>
-        <BadgeGrid badges={gamification.badges} />
-      </section>
+        <TabsContent value="stats" className="mt-6 space-y-8">
+          <section>
+            <h2 className="mb-4 text-xl font-semibold">Your impact</h2>
+            <ImpactStats
+              water={stats.water_saved_l}
+              co2={stats.co2_offset_kg}
+              landfill={stats.landfill_diverted_kg}
+            />
+          </section>
 
-      <section>
-        <h2 className="mb-4 text-xl font-semibold">Wardrobe inventory</h2>
-        <InventoryGrid items={items} />
-      </section>
+          <section>
+            <h2 className="mb-4 text-xl font-semibold">Achievements</h2>
+            <BadgeGrid badges={gamification.badges} />
+          </section>
+        </TabsContent>
+
+        <TabsContent value="inventory" className="mt-6">
+          <h2 className="mb-4 text-xl font-semibold">Wardrobe inventory</h2>
+          <InventoryGrid items={items} />
+        </TabsContent>
+
+        <TabsContent value="projects" className="mt-6">
+          <h2 className="mb-4 text-xl font-semibold">Your projects</h2>
+          {projects.length === 0 ? (
+            <div className="mt-4 rounded-xl border border-dashed p-12 text-center">
+              <p className="text-muted-foreground">No projects yet.</p>
+              <Link href="/upcycle" className="mt-4 inline-block text-primary hover:underline">
+                Start upcycling →
+              </Link>
+            </div>
+          ) : (
+            <div className="mt-4 grid gap-4">
+              {projects.map((project) => (
+                <Link key={project.id} href={`/projects/${project.id}`}>
+                  <Card className="transition-shadow hover:shadow-md">
+                    <CardHeader className="flex flex-row items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">
+                          {project.selected_concept?.title ?? "Upcycle project"}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          {project.created_at
+                            ? new Date(project.created_at).toLocaleDateString()
+                            : "Unknown date"}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="capitalize">
+                        {project.selected_concept?.difficulty ?? "n/a"}
+                      </Badge>
+                    </CardHeader>
+                    {project.environmental_impact && (
+                      <CardContent>
+                        <p className="line-clamp-2 text-sm text-muted-foreground">
+                          {project.environmental_impact}
+                        </p>
+                      </CardContent>
+                    )}
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

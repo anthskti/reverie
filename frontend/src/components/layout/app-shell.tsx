@@ -14,18 +14,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Leaf, LogOut, User } from "lucide-react";
+import { useAuthModal } from "@/components/providers/auth-modal-provider";
 
 const navLinks = [
   { href: "/upcycle", label: "Upcycle" },
-  { href: "/projects", label: "Projects" },
-  { href: "/marketplace", label: "Marketplace" },
   { href: "/profile", label: "Profile" },
+  { href: "/marketplace", label: "Marketplace" },
 ];
 
 export function Header() {
   const pathname = usePathname();
-  const { isAuthenticated, isLoading, user, loginWithRedirect, logout } =
-    useAuth0();
+  const { isAuthenticated, isLoading, user, logout } = useAuth0();
+  const { openAuthModal } = useAuthModal();
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -85,14 +85,7 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button
-              size="sm"
-              onClick={() =>
-                loginWithRedirect({
-                  appState: { returnTo: pathname === "/" ? "/profile" : pathname },
-                })
-              }
-            >
+            <Button size="sm" onClick={() => openAuthModal()}>
               Log in
             </Button>
           )}

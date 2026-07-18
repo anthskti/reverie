@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { ToastProvider } from "@/components/providers/toast-provider";
 import { AuthSessionSync } from "@/components/auth/auth-session-sync";
+import { AuthModalProvider } from "@/components/providers/auth-modal-provider";
 import { AppShell } from "@/components/layout/app-shell";
 import "./globals.css";
 
@@ -35,8 +36,10 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col">
         <AuthProvider>
           <AuthSessionSync />
-          <AppShell>{children}</AppShell>
-          <ToastProvider />
+          <AuthModalProvider>
+            <AppShell>{children}</AppShell>
+            <ToastProvider />
+          </AuthModalProvider>
         </AuthProvider>
       </body>
     </html>
