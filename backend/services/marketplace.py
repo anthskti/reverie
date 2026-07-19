@@ -7,6 +7,7 @@ import os
 from typing import Any
 from fastapi import HTTPException, status
 
+from models.marketplace_listing import MarketplaceListing
 from repositories.inventory_repository import InventoryRepository
 from repositories.marketplace_repository import MarketplaceRepository
 from services import unifold as unifold_service
@@ -102,13 +103,17 @@ class MarketplaceService:
 
     async def get_listing(self, listing_id: str) -> Any:
         """Retrieve details of a single listing."""
-        listing = await self.marketplace_repo.get_listing(listing_id)
+        listing = await self.marketplace_repo.get_listing_detail(listing_id)
         if listing is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Listing not found.",
             )
         return listing
+
+    async def get_listing_model(self, listing_id: str) -> MarketplaceListing | None:
+        """Fetch the raw listing row (used by checkout / webhooks)."""
+        return await self.marketplace_repo.get_listing(listing_id)
 
     async def checkout(self, listing_id: str, buyer_id: str) -> dict[str, Any]:
         """Create a local Unifold sandbox deposit session and lock the listing."""

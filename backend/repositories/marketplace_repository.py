@@ -62,6 +62,25 @@ class MarketplaceRepository:
             )
             return result.scalar_one_or_none()
 
+    async def get_listing_detail(self, listing_id: str) -> dict[str, Any] | None:
+        """Fetch a listing with joined item fields for API responses."""
+        if SessionLocal is None:
+            return None
+
+        async with SessionLocal() as session:
+            result = await session.execute(
+                select(MarketplaceListing, Item)
+                .outerjoin(Item, MarketplaceListing.item_id == Item.id)
+                .where(MarketplaceListing.id == uuid.UUID(listing_id))
+            )
+            row = result.one_or_none()
+
+        if row is None:
+            return None
+
+        listing, item = row
+        return _serialize_listing(listing, item)
+
     async def get_listing_owned_by(
         self, listing_id: str, seller_id: str
     ) -> MarketplaceListing | None:
@@ -220,7 +239,9 @@ def _serialize_listing(
         # item fields — only present for upcycled_clothing listings
         "item_style": item.style if item else None,
         "item_type": item.item_type if item else None,
-        "item_image_url": item.original_image_url if item else None,
+        "item_image_url": listing.image_url or (
+            item.original_image_url if item else None
+        ),
         "created_at": (
             listing.created_at.isoformat() if listing.created_at else None
         ),

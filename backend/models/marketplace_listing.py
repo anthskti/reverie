@@ -30,6 +30,8 @@ class MarketplaceListing(Base):
     buyer_id: Mapped[str | None] = mapped_column(String, nullable=True)
     title: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Direct image for tool/material listings (upcycled_clothing uses item join)
+    image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     category: Mapped[str] = mapped_column(String, nullable=False)  # see LISTING_CATEGORIES
     price_usdc: Mapped[float] = mapped_column(Numeric(18, 6), nullable=False)
     status: Mapped[str] = mapped_column(
