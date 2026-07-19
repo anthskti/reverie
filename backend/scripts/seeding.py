@@ -4,6 +4,7 @@ Creates per-user:
   • 1 Auth0 account (via Management API — skipped gracefully if not authorized)
   • 1 inventory Item  (upcycled piece, original_image_url=None)
   • 3 MarketplaceListing rows  (tool + upcycled_clothing + material/accessory)
+      tool/material listings include images from scripts/pics/
   • 1 UserStats row (realistic environmental impact numbers)
 
 Usage
@@ -28,13 +29,14 @@ from __future__ import annotations
 import argparse
 import asyncio
 import os
+import shutil
 import sys
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import delete
+from sqlalchemy import delete, text
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -44,7 +46,7 @@ from dotenv import load_dotenv
 
 load_dotenv(ROOT / ".env")
 
-from database.connection import SessionLocal, init_models, is_configured
+from database.connection import SessionLocal, direct_engine, engine, init_models, is_configured
 from models.item import Item
 from models.marketplace_listing import MarketplaceListing
 from models.user_stats import UserStats
@@ -83,10 +85,12 @@ class Persona:
     tool_title: str
     tool_description: str
     tool_price_usdc: float
+    tool_image: str
     # Material/accessory listing
     material_title: str
     material_description: str
     material_price_usdc: float
+    material_image: str
     # Environmental impact
     water_saved_l: float
     co2_offset_kg: float
@@ -116,6 +120,7 @@ PERSONAS: list[Persona] = [
             "Lightly used, still sharp."
         ),
         tool_price_usdc=18.50,
+        tool_image="rotary_cutter.png",
         material_title="Antique Brass O-Ring & Chain Pack",
         material_description=(
             "10-piece set of antique-brass O-rings (25 mm) and matching "
@@ -123,6 +128,7 @@ PERSONAS: list[Persona] = [
             "garment hardware. Unopened."
         ),
         material_price_usdc=9.00,
+        material_image="brass_orings.png",
         water_saved_l=410.0,
         co2_offset_kg=3.1,
         landfill_diverted_kg=0.82,
@@ -149,6 +155,7 @@ PERSONAS: list[Persona] = [
             "Gently used."
         ),
         tool_price_usdc=14.00,
+        tool_image="sewing_awl.png",
         material_title="Rit Dye Bundle — Cobalt & Mustard",
         material_description=(
             "Two 8 oz bottles of Rit All-Purpose liquid dye: one cobalt blue, "
@@ -156,6 +163,7 @@ PERSONAS: list[Persona] = [
             "linen, and rayon."
         ),
         material_price_usdc=12.50,
+        material_image="rit_dye.png",
         water_saved_l=225.0,
         co2_offset_kg=1.7,
         landfill_diverted_kg=0.45,
@@ -182,6 +190,7 @@ PERSONAS: list[Persona] = [
             "Includes all original attachments and manual."
         ),
         tool_price_usdc=195.00,
+        tool_image="janome.png",
         material_title="YKK #5 Zipper Tape Roll — 3 m Black",
         material_description=(
             "3-metre roll of YKK #5 continuous zipper tape with 6 metal "
@@ -189,6 +198,7 @@ PERSONAS: list[Persona] = [
             "and cushions. Unused."
         ),
         material_price_usdc=8.00,
+        material_image="zipper_roll.png",
         water_saved_l=455.0,
         co2_offset_kg=3.4,
         landfill_diverted_kg=0.91,
@@ -215,6 +225,7 @@ PERSONAS: list[Persona] = [
             "stiffening. Half the pack used."
         ),
         tool_price_usdc=7.50,
+        tool_image="ironon_interfacing.png",
         material_title="Velcro Sew-On Tape — 2 m White & Black",
         material_description=(
             "2 metres each of hook-and-loop sew-on Velcro in white and "
@@ -222,6 +233,7 @@ PERSONAS: list[Persona] = [
             "children's clothing. Brand new."
         ),
         material_price_usdc=6.00,
+        material_image="velcro_sew_on.png",
         water_saved_l=110.0,
         co2_offset_kg=0.8,
         landfill_diverted_kg=0.22,
@@ -248,6 +260,7 @@ PERSONAS: list[Persona] = [
             "All unused."
         ),
         tool_price_usdc=11.00,
+        tool_image="seam_ripper.png",
         material_title="Cyanotype Fabric Dye Kit",
         material_description=(
             "Sun-print cyanotype kit for fabric — two 120 ml bottles "
@@ -255,11 +268,46 @@ PERSONAS: list[Persona] = [
             "Creates stunning indigo-blue prints on natural fibres."
         ),
         material_price_usdc=19.00,
+        material_image="cyanotype.png",
         water_saved_l=675.0,
         co2_offset_kg=5.1,
         landfill_diverted_kg=1.35,
     ),
 ]
+
+# ---------------------------------------------------------------------------
+# Seed images (scripts/pics → backend/static/marketplace)
+# ---------------------------------------------------------------------------
+
+PICS_DIR = Path(__file__).resolve().parent / "pics"
+STATIC_MARKETPLACE_DIR = ROOT / "static" / "marketplace"
+
+
+def install_listing_image(filename: str) -> str:
+    """Copy a seed image into static/marketplace and return its URL path."""
+    src = PICS_DIR / filename
+    if not src.is_file():
+        raise FileNotFoundError(f"Seed image not found: {src}")
+
+    STATIC_MARKETPLACE_DIR.mkdir(parents=True, exist_ok=True)
+    dest = STATIC_MARKETPLACE_DIR / filename
+    shutil.copy2(src, dest)
+    return f"/static/marketplace/{filename}"
+
+
+async def ensure_listing_image_column() -> None:
+    """Add image_url to existing DBs (create_all only creates new tables)."""
+    target = direct_engine or engine
+    if target is None:
+        return
+
+    async with target.begin() as conn:
+        await conn.execute(
+            text(
+                "ALTER TABLE marketplace_listings "
+                "ADD COLUMN IF NOT EXISTS image_url TEXT"
+            )
+        )
 
 # ---------------------------------------------------------------------------
 # Auth0 Management API helpers
@@ -399,6 +447,7 @@ async def seed_database(
         )
 
     await init_models()
+    await ensure_listing_image_column()
 
     if SessionLocal is None:
         raise RuntimeError("Database session factory is not available.")
@@ -427,7 +476,7 @@ async def seed_database(
             # ----------------------------------------------------------------
             item = Item(
                 user_id=user_id,
-                original_image_url=None,   # user will import from Google
+                original_image_url=None,
                 style=persona.item_style,
                 difficulty=persona.item_difficulty,
                 fabric_type=persona.item_fabric,
@@ -464,6 +513,7 @@ async def seed_database(
                 description=persona.tool_description,
                 category="tool",
                 price_usdc=persona.tool_price_usdc,
+                image_url=install_listing_image(persona.tool_image),
                 status="active",
             )
             session.add(tool_listing)
@@ -478,6 +528,7 @@ async def seed_database(
                 description=persona.material_description,
                 category="material",
                 price_usdc=persona.material_price_usdc,
+                image_url=install_listing_image(persona.material_image),
                 status="active",
             )
             session.add(material_listing)
