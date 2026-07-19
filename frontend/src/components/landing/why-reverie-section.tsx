@@ -45,7 +45,7 @@ const reasons: Reason[] = [
     value: 60,
     suffix: "%",
     title: <a
-        href="https://www.europarl.europa.eu/topics/en/article/20201208STO93327/fast-fashion-eu-laws-for-sustainable-textile-consumption"
+        href="https://earth.org/statistics-about-fast-fashion-waste/"
         target="_blank"
         rel="noreferrer"
         className="text-primary underline"
