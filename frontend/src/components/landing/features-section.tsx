@@ -36,8 +36,8 @@ export function FeaturesSection() {
       <div className="mx-auto max-w-6xl px-4">
         <Reveal>
           <div className="mx-auto max-w-2xl text-center">
-            <span className="inline-block rounded-full bg-accent/20 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary">
-              What you can do
+            <span className="inline-block rounded-full bg-accent/20 px-4 py-1.5 text-xs font-bold text-primary">
+              What You Can Do
             </span>
             <h2 className="mt-4 text-3xl font-black text-primary md:text-4xl">
               Two paths to a greener wardrobe

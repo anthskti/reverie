@@ -20,7 +20,7 @@ export function LandingCta() {
           <div className="relative mx-auto max-w-2xl text-center">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-bold backdrop-blur-sm">
               <Leaf className="h-4 w-4 text-accent" />
-              Join the circular fashion movement
+              Join The Circular Fashion Movement
             </span>
             <h2 className="mt-5 text-3xl font-black md:text-4xl">
               Ready to grow a wardrobe that&apos;s kind to the planet?

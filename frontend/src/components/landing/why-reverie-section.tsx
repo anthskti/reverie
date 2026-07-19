@@ -10,7 +10,7 @@ type Reason = {
   suffix?: string;
   prefix?: string;
   decimals?: number;
-  title: string;
+  title: string | ReactNode;
   description: string | ReactNode;
 };
 
@@ -18,38 +18,48 @@ const reasons: Reason[] = [
   {
     value: 92,
     suffix: "M",
-    title: <a
+    title: (
+      <a
         href="https://earth.org/how-repairing-clothes-slows-down-climate-change/"
         target="_blank"
         rel="noreferrer"
         className="text-primary underline"
-      >"Tons of textile waste every year"</a>,
-    description: (
-
-        "Fashion churns out mountains of discarded clothes. Reverie gives garments a second life instead of a landfill trip."
+      >
+        "Tons of textile waste every year"
+      </a>
     ),
+    description:
+      "Fashion churns out mountains of discarded clothes. Reverie gives garments a second life instead of a landfill trip.",
   },
   {
     value: 2700,
     suffix: "L",
-    title:<a
+    title: (
+      <a
         href="https://www.europarl.europa.eu/topics/en/article/20201208STO93327/fast-fashion-eu-laws-for-sustainable-textile-consumption"
         target="_blank"
         rel="noreferrer"
         className="text-primary underline"
-      >Of water for one cotton tee</a>,
+      >
+        Of water for one cotton tee
+      </a>
+    ),
     description:
       "Every new piece costs the planet. Upcycling what you already own saves water, energy, and raw materials.",
   },
   {
     value: 60,
     suffix: "%",
-    title: <a
+    title: (
+      <a
         href="https://earth.org/statistics-about-fast-fashion-waste/"
         target="_blank"
         rel="noreferrer"
         className="text-primary underline"
-      >Of clothes end up in landfills</a>,
+      >
+        Of clothes end up in landfills
+      </a>
+    ),
     description:
       "Most wardrobes are full of untapped potential. We built Reverie so creativity beats consumption.",
   },
@@ -92,8 +102,8 @@ export function WhyReverieSection() {
       <div className="relative mx-auto max-w-6xl px-4">
         <Reveal>
           <div className="mx-auto max-w-2xl text-center">
-            <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary">
-              Why Reverie exists
+            <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold text-primary">
+              Why Reverie Exists
             </span>
             <h2 className="mt-4 text-3xl font-black text-primary md:text-4xl">
               The numbers that inspired us
@@ -107,7 +117,7 @@ export function WhyReverieSection() {
 
         <ol className="mt-14 grid gap-5 md:grid-cols-2">
           {reasons.map((reason, index) => (
-            <Reveal key={reason.title} delay={index * 0.08}>
+            <Reveal key={index} delay={index * 0.08}>
               <li
                 className={cn(
                   "group relative flex gap-5 overflow-hidden rounded-3xl border border-primary/10 bg-card/80 p-6 shadow-sm backdrop-blur-sm transition-all hover:border-accent/40 hover:shadow-lg hover:shadow-primary/5 md:p-8",

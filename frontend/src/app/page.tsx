@@ -20,6 +20,7 @@ import {
   Sparkles,
   TreePine,
 } from "lucide-react";
+import Image from "next/image";
 
 async function getLandingData() {
   try {
@@ -36,7 +37,8 @@ async function getLandingData() {
         total_landfill_diverted_kg: 0,
       },
       listings: [],
-      error: "Could not reach the backend. Start the API server to see live data.",
+      error:
+        "Could not reach the backend. Start the API server to see live data.",
     };
   }
 }
@@ -57,18 +59,28 @@ export default async function HomePage() {
 
         <TreeSilhouette className="pointer-events-none absolute bottom-24 left-[5%] hidden h-32 w-32 text-white/[0.08] md:block" />
         <TreeSilhouette className="pointer-events-none absolute bottom-20 right-[8%] hidden h-40 w-40 text-white/[0.06] md:block" />
-        <TreePine className="pointer-events-none absolute bottom-28 right-[22%] hidden h-16 w-16 text-accent/20 lg:block" strokeWidth={1.5} />
+        <TreePine
+          className="pointer-events-none absolute bottom-28 right-[22%] hidden h-16 w-16 text-accent/20 lg:block"
+          strokeWidth={1.5}
+        />
 
         <div className="relative mx-auto max-w-4xl px-4 pb-32 pt-24 text-center md:pb-40 md:pt-32">
           <Reveal>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-3 text-lg md:text-xl font-extrabold backdrop-blur-sm">
-              Reverie
-            </span>
+            <div className="mx-auto flex justify-center">
+              <Image
+                src="/reverielogo.png"
+                alt="Reverie"
+                width={700}
+                height={200}
+                priority
+                className="h-16 w-auto object-contain drop-shadow-sm md:h-24 lg:h-28"
+              />
+            </div>
           </Reveal>
 
           <Reveal delay={0.1}>
             <h1 className="mt-6 text-4xl font-black leading-[1.08] tracking-tight md:text-6xl lg:text-7xl">
-              Dream up a{" "}
+              dream up a
               <span
                 className="bg-clip-text text-transparent"
                 style={{
@@ -76,17 +88,18 @@ export default async function HomePage() {
                     "linear-gradient(90deg, #B7E4C7 0%, #74C69D 50%, #D8F3DC 100%)",
                 }}
               >
-                greener wardrobe
+                <br />
+                Greener Wardrobe
               </span>
             </h1>
           </Reveal>
 
           <Reveal delay={0.18}>
-            <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-primary-foreground/90 md:text-xl">
-              <strong className="font-bold text-white">Our mission:</strong>{" "}
-              Reverie helps you transform old clothes into something you love,
-              with AI design, sewing guides, impact tracking, and a marketplace
-              built for circular fashion.
+            <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-primary-foreground/90 md:text-2xl">
+              Don't throw it out. Transform it.
+              <br />
+              Reimagine your wardrobe with AI-powered upcycling, step-by-step
+              guides, and a curated marketplace built for a circular future.
             </p>
           </Reveal>
 
@@ -135,8 +148,8 @@ export default async function HomePage() {
       <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
         <Reveal>
           <div className="mx-auto max-w-2xl text-center">
-            <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary">
-              Real impact
+            <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold text-primary">
+              Real Impact
             </span>
             <h2 className="mt-4 text-3xl font-black text-primary md:text-4xl">
               What our community has saved
@@ -147,7 +160,9 @@ export default async function HomePage() {
           </div>
         </Reveal>
         {error && (
-          <p className="mb-4 mt-6 text-center text-sm text-amber-700">{error}</p>
+          <p className="mb-4 mt-6 text-center text-sm text-amber-700">
+            {error}
+          </p>
         )}
         <Reveal delay={0.1}>
           <div className="mt-10">
@@ -171,7 +186,7 @@ export default async function HomePage() {
                     Fresh from the marketplace
                   </h2>
                   <p className="mt-2 text-muted-foreground">
-                    One-of-a-kind upcycled pieces from the community
+                    One of a kind upcycled pieces from the community
                   </p>
                 </div>
                 <Button asChild size="lg">

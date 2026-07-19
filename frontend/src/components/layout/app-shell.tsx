@@ -17,7 +17,6 @@ import { Leaf, LogOut, User } from "lucide-react";
 import { useAuthModal } from "@/components/providers/auth-modal-provider";
 import Image from "next/image";
 
-
 const navLinks = [
   { href: "/upcycle", label: "Upcycle" },
   { href: "/profile", label: "Profile" },
@@ -34,7 +33,7 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2.5">
           <Image
-            src="/reverie2.webp"
+            src="/reverie_icon.png"
             alt="Reverie logo"
             width={48}
             height={48}
@@ -63,9 +62,15 @@ export function Header() {
           {isLoading ? null : isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                <Button
+                  variant="ghost"
+                  className="relative h-10 w-10 rounded-full p-0"
+                >
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={user?.picture} alt={user?.name ?? "User"} />
+                    <AvatarImage
+                      src={user?.picture}
+                      alt={user?.name ?? "User"}
+                    />
                     <AvatarFallback>
                       {user?.name?.charAt(0) ?? "U"}
                     </AvatarFallback>
@@ -83,7 +88,9 @@ export function Header() {
                 <DropdownMenuItem
                   className="cursor-pointer"
                   onClick={() =>
-                    logout({ logoutParams: { returnTo: window.location.origin } })
+                    logout({
+                      logoutParams: { returnTo: window.location.origin },
+                    })
                   }
                 >
                   <LogOut className="mr-2 h-4 w-4" />
